@@ -48,7 +48,7 @@ pt:
 
 
 ### Doesn't work
-* If the YAML already contains comments
+* Poping comments if the output YAML already contains comments
 
 ### Probably doesn't work
 * Likely will break with lists or other structures
