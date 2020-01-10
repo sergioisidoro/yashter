@@ -13,8 +13,11 @@ from functools import reduce
 # DEBUG
 import pdb
     
+# default_style ∈ None, '', '"', "'", '|', '>'
+DEFAULT_STYLE = None
+PRESERVE_QUOTES = None
+DEFAULT_FLOW_STYLE = False
 
-special_keys = ["_comments", "_is_leaf"]
 
 def _parse_yaml_comments(sub_doc, parent=None, parent_comments=None):
     state = collections.defaultdict(dict)
@@ -81,7 +84,7 @@ def _restorer(sub_doc, comments_repo, current_path=[], current_indentation=0):
         current_keys_dict = getFromDict(
             comments_repo,
             next_path)
-        
+
         if current_keys_dict: 
             current_keys_comments = current_keys_dict["_comments"]
         else:
@@ -150,7 +153,7 @@ def main(ctx):
 )
 @click.option(
     '--exclude', '-e',
-    help='glob for excluding',
+    help='CURRENTLY NOT SUPPORTED',
 )
 def stash(files, base_path, output, replace, exclude):
     click.echo(
@@ -158,7 +161,19 @@ def stash(files, base_path, output, replace, exclude):
     )
     base_glob = files
     yaml = ruamel.yaml.YAML()
+    yaml.default_style = DEFAULT_STYLE
+    yaml.explicit_start = True
+    yaml.preserve_quotes = PRESERVE_QUOTES
+    yaml.default_flow_style = DEFAULT_FLOW_STYLE
+    yaml.compact(seq_seq=False, seq_map=False)
+
     non_comment_parser = ruamel.yaml.YAML(typ='safe')
+    non_comment_parser.default_style = DEFAULT_STYLE
+    non_comment_parser.explicit_start = True
+    non_comment_parser.preserve_quotes = PRESERVE_QUOTES
+    non_comment_parser.default_flow_style = DEFAULT_FLOW_STYLE
+    non_comment_parser.compact(seq_seq=False, seq_map=False)
+
     comment_directory = collections.defaultdict(dict)
     for file in Path(base_path).rglob(base_glob):
         click.echo("Processing file %s " % file)
@@ -181,7 +196,6 @@ def stash(files, base_path, output, replace, exclude):
                 yaml.dump(data, output_stream)
 
 
-
 @main.command()
 @click.option(
     '--input', '-i',
@@ -201,15 +215,21 @@ def stash(files, base_path, output, replace, exclude):
 )
 @click.option(
     '--exclude', '-e',
-    help='glob for excluding',
+    help='CURRENTLY NOT SUPPORTED',
 )
 def pop(input, base_path, replace, exclude):
     if replace:
         click.echo("REPLACING FILES")
     else:
         click.echo("Dry run. Generating _dryrun files")
+
     yaml = ruamel.yaml.YAML()
     yaml.explicit_start = True
+    yaml.default_style = DEFAULT_STYLE
+    yaml.preserve_quotes = PRESERVE_QUOTES
+    yaml.default_flow_style = DEFAULT_FLOW_STYLE
+    yaml.compact(seq_seq=False, seq_map=False)
+
     with open(input) as json_file:
         comment_directory = json.load(json_file)
         for file, comments_repo in comment_directory.items():
@@ -225,6 +245,7 @@ def pop(input, base_path, replace, exclude):
                 alt_path = Path(base_path, file + "dryrun")
                 with open(alt_path, "w+") as output_stream:
                     yaml.dump(new_data, output_stream)
+
 
 if __name__ == '__main__':
     main()
