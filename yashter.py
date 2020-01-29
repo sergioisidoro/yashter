@@ -15,7 +15,8 @@ import pdb
     
 # default_style ∈ None, '', '"', "'", '|', '>'
 DEFAULT_STYLE = None
-PRESERVE_QUOTES = None
+# Will break things lile "Yes" if quotes are not preserved...
+PRESERVE_QUOTES = True
 DEFAULT_FLOW_STYLE = False
 
 
@@ -167,7 +168,7 @@ def stash(files, base_path, output, replace, exclude):
     yaml.default_flow_style = DEFAULT_FLOW_STYLE
     yaml.compact(seq_seq=False, seq_map=False)
 
-    non_comment_parser = ruamel.yaml.YAML(typ='safe')
+    non_comment_parser = ruamel.yaml.YAML()
     non_comment_parser.default_style = DEFAULT_STYLE
     non_comment_parser.explicit_start = True
     non_comment_parser.preserve_quotes = PRESERVE_QUOTES
@@ -235,6 +236,10 @@ def pop(input, base_path, replace, exclude):
         for file, comments_repo in comment_directory.items():
             click.echo("Processing file %s " % file)
             doc_path = Path(base_path, file)
+            if not doc_path.is_file():
+                click.echo("FILE DELETED")
+                continue
+
             doc_data = yaml.load(doc_path)
             new_data = restore_comments(doc_data, comments_repo)
 
